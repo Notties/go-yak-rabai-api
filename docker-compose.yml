@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: chat-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - PORT=${PORT}
+      - DATABASE_URL=host=${DB_HOST} user=${DB_USER} dbname=${DB_NAME} password=${DB_PASSWORD}
+    depends_on:
+      - redis
+      - db
+    networks:
+      - chat_network
+
+  db:
+    image: postgres:latest
+    container_name: chat-db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - chat_network
+
+  redis:
+    image: redis:latest
+    container_name: chat-redis
+    networks:
+      - chat_network
+
+networks:
+  chat_network:
+    driver: bridge
+
+volumes:
+  pg_data:
